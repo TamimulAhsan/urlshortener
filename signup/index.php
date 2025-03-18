@@ -1,3 +1,4 @@
+<!-- TODO: Add email verification -->
 <?php
 session_start();
 // Start Database Connection
