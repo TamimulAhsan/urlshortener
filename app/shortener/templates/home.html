@@ -1,0 +1,185 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .profile-icon:hover .logout-popup {
+            display: block;
+        }
+        .url-link:hover {
+            text-decoration: underline;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4">
+        <div class="flex justify-between items-center mb-8">
+            <h1 id="username" class="text-4xl font-bold">Hello {{ username }}!</h1>
+            <div class="relative profile-icon">
+                <div class="bg-gray-800 p-2 rounded-full cursor-pointer">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+                <div class="logout-popup absolute right-0 mt-2 w-32 bg-gray-800 text-white rounded-lg shadow-lg hidden">
+                    <a href="http://192.168.1.19:8080/logout.php" class="w-full text-left px-4 py-2 block">Logout</a>
+                </div>
+            </div>
+        </div>
+        <p class="mb-4">Use this site to shorten your urls</p>
+        <form id="shorten-form" class="mb-4 text-center flex justify-center items-center">
+            {% csrf_token %}
+            <label for="original-url" class="block text-base mb-2">Original URL :</label>
+            <input type="text" id="original-url" name="original_url" class="w-full md:w-1/2 p-2 rounded bg-gray-800 text-white mx-2" placeholder="https://example.com">
+            <button type="submit" class="bg-purple-500 text-white px-4 py-2 rounded">Shorten</button>
+        </form>
+        <p id="short-url-display" class="mb-8 text-center">Short URL: <a href="#" id="short-url-link" class="text-purple-500 url-link"></a></p>
+        <p class="mb-4">Total URLs: {{ total_urls }}</p>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr>
+                        <th class="border-b border-gray-700 p-2">Original URL</th>
+                        <th class="border-b border-gray-700 p-2">Shortened URL</th>
+                        <th class="border-b border-gray-700 p-2">Timestamp</th>
+                        <th class="border-b border-gray-700 p-2 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="url-table-body">
+                    {% for url in urls %}
+                    <tr data-url-id="{{ url.id }}">
+                        <td class="border-b border-gray-700 p-2">{{ url.original_url }}</td>
+                        <td class="border-b border-gray-700 p-2">
+                            <a href="http://192.168.1.19:8081/{{ url.short_code }}" class="text-purple-500 url-link">
+                                http://192.168.1.19:8081/{{ url.short_code }}
+                            </a>
+                        </td>
+                        <td class="border-b border-gray-700 p-2">{{ url.created_at|date:"d/m/Y H:i:s" }}</td>
+                        <td class="border-b border-gray-700 p-2 text-center">
+                            <i class="fas fa-trash text-white cursor-pointer delete-btn"></i>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        document.querySelector('.profile-icon').addEventListener('click', function() {
+            const popup = document.querySelector('.logout-popup');
+            popup.classList.toggle('hidden');
+        });
+
+        // Add event listeners to delete buttons
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const urlId = row.dataset.urlId;
+		
+                fetch(`/delete/${urlId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        row.remove();
+                        // Update total URLs count
+                        const totalUrlsElement = document.querySelector('p.mb-4');
+                        const currentCount = parseInt(totalUrlsElement.textContent.split(':')[1].trim()) - 1;
+                        totalUrlsElement.textContent = `Total URLs: ${currentCount}`;
+                    }
+                });
+            });
+        });
+
+        // Form submission
+        document.getElementById('shorten-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const originalUrl = document.getElementById('original-url').value;
+            const formData = new FormData();
+            formData.append('original_url', originalUrl);
+            
+            fetch('/shorten/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Update short URL display
+                const shortUrlLink = document.getElementById('short-url-link');
+                shortUrlLink.textContent = data.short_url;
+                shortUrlLink.href = data.short_url;
+                
+                // Add new row to table
+                const tableBody = document.getElementById('url-table-body');
+                const newRow = document.createElement('tr');
+                newRow.dataset.urlId = data.id;
+                
+                newRow.innerHTML = `
+                    <td class="border-b border-gray-700 p-2">${data.original_url}</td>
+                    <td class="border-b border-gray-700 p-2">
+                        <a href="${data.short_url}" class="text-purple-500 url-link">
+                            ${data.short_url}
+                        </a>
+                    </td>
+                    <td class="border-b border-gray-700 p-2">${data.timestamp}</td>
+                    <td class="border-b border-gray-700 p-2 text-center">
+                        <i class="fas fa-trash text-white cursor-pointer delete-btn"></i>
+                    </td>
+                `;
+                
+                tableBody.insertBefore(newRow, tableBody.firstChild);
+                
+                // Add event listener to new delete button
+                newRow.querySelector('.delete-btn').addEventListener('click', function() {
+                    const urlId = newRow.dataset.urlId;
+                    
+                    fetch(`/delete/${urlId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            newRow.remove();
+                            // Update total URLs count
+                            const totalUrlsElement = document.querySelector('p.mb-4');
+                            const currentCount = parseInt(totalUrlsElement.textContent.split(':')[1].trim()) - 1;
+                            totalUrlsElement.textContent = `Total URLs: ${currentCount}`;
+                        }
+                    });
+                });
+                
+                // Update total URLs count
+                const totalUrlsElement = document.querySelector('p.mb-4');
+                const currentCount = parseInt(totalUrlsElement.textContent.split(':')[1].trim()) + 1;
+                totalUrlsElement.textContent = `Total URLs: ${currentCount}`;
+                
+                // Clear input
+                document.getElementById('original-url').value = '';
+            });
+        });
+    </script>
+</body>
+</html>

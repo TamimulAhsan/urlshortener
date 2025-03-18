@@ -1,0 +1,7 @@
+django
+mysql-client
+django-rest-framework
+bcrypt
+gunicorn
+dotenv
+validators
