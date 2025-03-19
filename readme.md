@@ -154,9 +154,12 @@ USE url_shortener_db;
 CREATE TABLE users (
     unique_id VARCHAR(255) PRIMARY KEY,
     username VARCHAR(255) UNIQUE,
+    email VARCHAR(255) NOT NULL,
+    is_verified TINYINT(1) NOT NULL DEFAULT 0,
     hashed_password VARCHAR(255),
     timestamp DATETIME,
-    session_id VARCHAR(255)
+    session_id VARCHAR(255),
+    token VARCHAR(255)
 );
 ```
 
@@ -164,9 +167,12 @@ CREATE TABLE users (
 
 Update `/index.php` change the domain, path, and secure settings for the cookie.
 
+### Modify your smtp details for email verification
+update `/signup/index.php` and include your stmp server, username, password and the message body to your needs.
+
 ### Configure Nginx
 
-Copy the Nginx configuration file to `/etc/nginx/sites-available/urlshortener` and restart Nginx:
+Copy the Nginx configuration file to `/etc/nginx/sites-enabled/urlshortener` and restart Nginx:
 
 ```sh
 sudo systemctl restart nginx

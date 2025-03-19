@@ -16,70 +16,64 @@ if ($db->connect_error) {
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
+    $input = $_POST['username']; // Can be either username or email
     $password = $_POST['password'];
 
     try {
-        $stmt = $db->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->bind_param("s", $username);
+        // Check if input is email or username and fetch user details
+        $stmt = $db->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
+        $stmt->bind_param("ss", $input, $input);
         $stmt->execute();
-	$result = $stmt->get_result();
+        $result = $stmt->get_result();
         $user = $result->fetch_assoc();
 
         if ($user && password_verify($password, $user['hashed_password'])) {
-            $unique_id = $user['unique_id'] ?? uniqid();
+            if ($user['is_verified'] == 0) {
+                $error = "Please verify your email before logging in.";
+            } else {
+                $unique_id = $user['unique_id'] ?? uniqid();
+                $_SESSION['unique_id'] = $unique_id;
 
-            $_SESSION['unique_id'] = $unique_id;
+                // Generate a new session ID
+                session_regenerate_id(true);
+                $session_id = session_id();
 
-            //Generate a new session id
-            session_regenerate_id(true);
-            $session_id = session_id();
-
-            //store the session ID and make sure the user has a unique id in the db
-            try {
+                // Store the session ID in the database
                 $stmt = $db->prepare("UPDATE users SET session_id = ?, unique_id = ? WHERE username = ?");
-                $stmt->bind_param("sss", $session_id, $unique_id, $username);
+                $stmt->bind_param("sss", $session_id, $unique_id, $user['username']);
                 if (!$stmt->execute()) {
                     $error = "Error Updating Session ID: " . $stmt->error;
                 }
+
+                // Set the session cookie
+                setcookie("PHPSESSID", $session_id, [
+                    "expires" => time() + 3600,
+                    "path" => "/",
+                    "domain" => "192.168.1.19",
+                    "secure" => false, // Set to true if using HTTPS
+                    "httponly" => true,
+                    "samesite" => "Lax"
+                ]);
+
+                // Update the last login time
+                $now = date('Y-m-d H:i:s');
+                $stmt = $db->prepare("UPDATE users SET timestamp = ? WHERE unique_id = ?");
+                $stmt->bind_param("ss", $now, $user['unique_id']);
                 $stmt->execute();
-            } catch (Exception $e) {
-                $error = "Error Updating Session ID: " . $e->getMessage();
+
+                // Redirect to main page
+                header("Location: /app");
+                exit();
             }
-
-            //Set the session cookie
-            setcookie("PHPSESSID", $session_id, [
-                "expires" => time() + 3600,
-                "path" => "/",
-                "domain" => "192.168.1.19",
-                "secure" => false, //Set to true if using https
-                "httponly" => true, //set to false if using https
-                "samesite" => "Lax"
-            ]);
-
-            //Update the last login time
-            $now = date('Y-m-d H:i:s');
-            $stmt = $db->prepare("UPDATE users SET timestamp = ? WHERE unique_id = ?");
-            $stmt->bind_param("ss", $now, $user['unique_id']);
-            $stmt->execute();
-
-            //Redirect to main page
-            header("Location: /app");
-            exit();
-        
         } else {
-            $error = "Invalid Username or Password";
-        } 
-    } catch(Exception $e) {
+            $error = "Invalid Username/Email or Password";
+        }
+    } catch (Exception $e) {
         $error = "Error: " . $e->getMessage();
     }
     $stmt->close();
 }
 $db->close();
-?>
-
-<?php
-$resultMessage = ''; // Initialize the variable to avoid undefined variable warning
 ?>
 
 
@@ -96,7 +90,7 @@ $resultMessage = ''; // Initialize the variable to avoid undefined variable warn
             <h2 class="text-2xl font-bold text-white text-center mb-6">LOGIN</h2>
             <form method="POST">
                 <div class="mb-4">
-                    <label class="block text-white mb-2" for="username">Username</label>
+                    <label class="block text-white mb-2" for="username">Username/Email</label>
                     <input class="w-full p-2 border border-gray-400 rounded" type="text" id="username" name="username">
                 </div>
                 <div class="mb-6">
