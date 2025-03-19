@@ -7,9 +7,12 @@ from django.utils import timezone
 class User(models.Model):
     unique_id = models.CharField(max_length=255, primary_key=True)
     username = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(max_length=255, unique=True)
+    is_verified = models.BooleanField(default=False)
     hashed_password = models.CharField(max_length=255)
     timestamp = models.DateTimeField()
     session_id = models.CharField(max_length=255, null=True, blank=True)
+    token = models.CharField(max_length=255)
 
     class Meta:
         # This tells Django this is an existing table
