@@ -1,13 +1,20 @@
 # Self Hosted URL Shortener with Login/Signup
 Tested on ubuntu 24.04 LTS
 
+## Features
+- User registration and login
+- Email verification
+- URL shortening and redirection
+- User dashboard to view and manage shortened URLs
+
+
+
 ## Requirements
 
-1. **Python 3**
-2. **Libraries**: `django`, `mysql-client`, `django-restframework`, `bcrypt`, `gunicorn`, `dotenv`, `validators`
-3. **MySQL Server**
-4. **Nginx**
-5. **php-fpm**
+1. **Python 3:** `django`, `mysql-client`, `django-restframework`, `bcrypt`, `gunicorn`, `dotenv`, `validators`
+2. **MySQL Server**
+3. **Nginx**
+4. **php-fpm**
 
 ---
 
