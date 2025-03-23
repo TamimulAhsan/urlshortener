@@ -1,13 +1,11 @@
 <?php
+require 'config.php';
+
 // Include database connection
-$servername= "localhost";
-$username= "django_user";
-$password= "yourpassword";
-$dbname = "url_shortener_db";
 $db = new mysqli($servername, $username, $password, $dbname);
 
-if (!isset($_GET['token'])) {
-    die("Invalid verification link.");
+if (!isset($_GET['it'])) {
+    die("");
 }
 
 $token_rec = $_GET['it'];
@@ -34,7 +32,6 @@ if ($result->num_rows === 0) {
         $stmt->bind_param("s", $token);
         if ($stmt->execute()) {
             $verificationStatus = "success"; // Successfully verified
-            header("refresh:5;url=/");
         } else {
             $verificationStatus = "failed"; // Database update error
         }
@@ -63,7 +60,7 @@ $db->close();
                 document.getElementById("loginButton").style.display = "inline-block";
             } else if (verificationStatus === "already_verified") {
                 document.getElementById("message").textContent = "Already Verified!";
-                document.getElementById("submessage").textContent = "Your email has already been verified.";
+                document.getElementById("submessage").textContent = "Your email has already been verified. Redirecting to Login in 5 seconds.";
                 document.getElementById("loginButton").style.display = "inline-block";
             } else {
                 document.getElementById("message").textContent = "Verification Failed!";

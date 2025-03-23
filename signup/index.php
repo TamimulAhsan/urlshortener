@@ -2,17 +2,13 @@
 <?php
 session_start();
 require '../vendor/autoload.php';
+require '../config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 // Start Database Connection
-$servername= "localhost";
-$username= "django_user";
-$password= "yourpassword";
-$dbname = "url_shortener_db";
-
 $db = new mysqli($servername, $username, $password, $dbname);
 
 // Check Connection
@@ -60,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $stmt = $db->prepare("INSERT INTO users (unique_id, username, email, is_verified, hashed_password, timestamp, session_id, token) 
                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssissss", $unique_id, $username, $email, $is_verified, $hashed_password, $timestamp, $session_id, $token);
+            $stmt->bind_param("sssissss", $unique_id, $username, $email, $is_verified, $hashed_password, $timestamp, $session_id, $token_gen);
 
             if ($stmt->execute()) {
                 $mail = new PHPMailer(true);

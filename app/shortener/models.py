@@ -13,6 +13,7 @@ class User(models.Model):
     timestamp = models.DateTimeField()
     session_id = models.CharField(max_length=255, null=True, blank=True)
     token = models.CharField(max_length=255)
+    r_token = models.CharField(max_length=255)
 
     class Meta:
         # This tells Django this is an existing table

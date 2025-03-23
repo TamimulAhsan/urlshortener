@@ -1,12 +1,8 @@
 <?php
 session_start();
 
+require 'config.php';
 // Database connection
-$servername = "localhost";
-$username = "django_user";
-$password = "yourpassword";
-$dbname = "url_shortener_db";
-
 $db = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
@@ -107,7 +103,10 @@ $db->close();
                 </div>
             </form>
         </div>
-        <div class="mt-4 text-center">
+        <div class="mt-0.1 text-right">
+	        <a href="/recovery" class="text-purple-500 hover:text-white hover:underline">Forgot Password?</a>
+        </div>
+        <div class="mt-5 text-center">
             <p class="text-white">New here? <a href="/signup" class="text-purple-500 hover:text-white hover:underline">Create an account</a></p>
         </div>
     </div>
