@@ -4,6 +4,7 @@ Tested on ubuntu 24.04 LTS
 ## Features
 - User registration and login
 - Email verification
+- Account recovery
 - URL shortening and redirection
 - User dashboard to view and manage shortened URLs
 
@@ -163,10 +164,11 @@ CREATE TABLE users (
     username VARCHAR(255) UNIQUE,
     email VARCHAR(255) NOT NULL,
     is_verified TINYINT(1) NOT NULL DEFAULT 0,
-    hashed_password VARCHAR(255),
+    hashed_password VARCHAR(255) NOT NULL,
     timestamp DATETIME,
     session_id VARCHAR(255),
-    token VARCHAR(255)
+    token VARCHAR(255),
+    r_token VARCHAR(255),
 );
 ```
 
@@ -192,4 +194,5 @@ sudo systemctl restart nginx
 <img src="images/login.png" alt="Login Page">
 <img src="images/signup.png" alt="Signup Page">
 <img src="images/homepage.png" alt="Home Page">
+<img src="images/password_recovery.png" alt="Password Reset">
 
